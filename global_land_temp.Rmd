@@ -1,0 +1,37 @@
+---
+title: "Global Land Temperatures"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, include = FALSE)
+library(tidyverse)
+```
+
+```{r}
+temp <- read_csv('global_land_temp.csv')
+temp <- temp %>%
+  subset(Country == 'United States') %>%
+  select(-AverageTemperatureUncertainty) %>%
+  mutate(AverageTemperature = AverageTemperature * 1.8 + 32) %>%
+  rename(date = dt,
+         tmp = AverageTemperature,
+         state = State) %>%
+  drop_na() %>%
+  mutate(year = format(as.Date(date, format="%Y-%m/%d"),"%Y")) %>%
+  filter(year >= 1750)
+```
+```{r}
+avg.temp.by.year <- temp %>%
+  group_by(year) %>%
+  summarize(avg.temp = mean(tmp))
+```
+
+```{r include=TRUE}
+ggplot(avg.temp.by.year, aes(x=year, y=avg.temp, group=1)) +
+  geom_smooth(method="loess", formula = y ~ x) +
+  xlab("Year") +
+  ylab("Average Temperature (F)") +
+  theme(axis.text.x=element_text(angle=-45, vjust = 0.5)) +
+  scale_x_discrete(limits=avg.temp.by.year$year,breaks=avg.temp.by.year$year[seq(1,length(avg.temp.by.year$year),by=10)])
+```
